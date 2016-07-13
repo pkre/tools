@@ -7,7 +7,7 @@ INT64 = 0x01
 ARRAY = 0x02
 INT32 = 0x05
 
-def process(msg):
+def process(msg, recurse=True):
     """
     Convert raw protobuf binary into a psuedo message
 
@@ -16,14 +16,14 @@ def process(msg):
     """
     root = collections.defaultdict(list)
     for t, n, v in parse(msg):
-        if t == 2:
+        if t == 2 and recurse:
             try:
                 root[n].append(process(v))
             except:
                 root[n].append(v)
         else:
             root[n].append(v)
-    return root
+    return dict(root)
 
 
 def parse(raw):
@@ -67,18 +67,10 @@ def read_varint(stream):
         shift += 7
 
 def read_64bit(stream):
-    value = struct.unpack('<d', stream.read(8))[0]
-    if value < -35.2 and value > -35.3:
-        log.error('lat: %r', value)
-    if value < 148.8 and value > 149.1:
-        log.error('lng: %r', value)
-    log.error('found a double: %r' % value)
-    return value
+    return struct.unpack('<d', stream.read(8))[0]
 
 def read_32bit(stream):
-    value = struct.unpack('<f', stream.read(4))[0]
-    log.error('found a float: %r' % value)
-    return value
+    return struct.unpack('<f', stream.read(4))[0]
 
 def read_repeated(stream):
     count = read_varint(stream)
